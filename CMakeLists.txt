@@ -11,7 +11,7 @@ set(PRODUCT_NAME "NEW_PROJECT")
 set(MCU atmega32u4)
 
 # Flash Progammer type
-set(PROG_TYPE avrispmkII)
+set(PROG_TYPE atmelice_isp)
 
 # Add our MCU compiler options
 add_compile_options(
@@ -49,8 +49,8 @@ set(LINKER_STATIC_LIBRARIES
 
 # Set your desired fuse values for writing
 set(LOW_FUSE_VAL 0xc2)
-set(HIGH_FUSE_VAL 0xd9)
-set(EXTENDED_FUSE_VAL 0xcb)
+set(HIGH_FUSE_VAL 0x99)
+set(EXTENDED_FUSE_VAL 0xc3)
 
 # Create a list of our APP source
 set(APP_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c
