@@ -16,12 +16,6 @@ execute_process(
 )
 
 get_filename_component(AVR_TOOLCHAIN_DIR ${BINUTILS_PATH} DIRECTORY)
-# Without that flag CMake is not able to pass test compilation check
-if (${CMAKE_VERSION} VERSION_EQUAL "3.6.0" OR ${CMAKE_VERSION} VERSION_GREATER "3.6")
-    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
-else()
-    set(CMAKE_EXE_LINKER_FLAGS_INIT "--specs=nosys.specs")
-endif()
 
 set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}gcc)
 set(CMAKE_ASM_COMPILER ${CMAKE_C_COMPILER})
