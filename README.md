@@ -6,7 +6,7 @@ Template project for building AVR based firmware using VScode, CMake and the AVR
 ## Tools Setup
 At a minium you will need the avr-gcc toolchain, Make and CMake to compile the source and generate executable artifacts.
 -   [avrdude](https://github.com/avrdudes/avrdude)
--   [gcc-avr / avr 8-bit toolchain]()
+-   gcc-avr / avr 8-bit toolchain
     - Windows can install via the download from [Microchip](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio/gcc-compilers)
     - If you are in Ubuntu, you can use ```apt```
         ```shell
