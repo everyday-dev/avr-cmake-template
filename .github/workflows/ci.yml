@@ -1,0 +1,27 @@
+name: CI - AVR-GCC Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Check out submodules
+      run: git submodule update --init --recursive
+    - name: Retrieve AVR-GCC Tools
+      run: sudo apt-get install gcc-avr avr-libc
+    - name: Install CMake
+      run: sudo apt-get install cmake
+    - name: Compile
+      run: |
+        ./setup.sh
+        cd build
+        cmake ..
+        make -j32

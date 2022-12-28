@@ -1,0 +1,123 @@
+# Set min req version of Cmake
+cmake_minimum_required(VERSION 3.13)
+
+#####################################################################################
+# Set our project and CPU specific flags, options, definitions and Linker Settings
+#####################################################################################
+# Set project name w/ no spaces
+set(PRODUCT_NAME "NEW_PROJECT")
+
+# Target MCU
+set(MCU atmega32u4)
+
+# Flash Progammer type
+set(PROG_TYPE avrispmkII)
+
+# Add our MCU compiler options
+add_compile_options(
+    -mmcu=${MCU} # MCU
+    -std=gnu99 # C99 standard
+    -Os # optimize
+    -Wall # enable warnings
+    -Wno-main
+    -Wundef
+    -Wstrict-prototypes
+    -Werror
+    -Wfatal-errors
+    -Wl,--relax,--gc-sections
+    -g
+    -gdwarf-2
+    -funsigned-char # a few optimizations
+    -funsigned-bitfields
+    -fpack-struct
+    -fshort-enums
+    -ffunction-sections
+    -fdata-sections
+    -fno-split-wide-types
+    -fno-tree-scev-cprop
+    -DF_CPU=1000000UL
+    -DF_USB=8000000UL
+)
+
+# Set the target linker flags
+set(LINKER_FLAGS "-mmcu=${MCU} -Wl,--gc-sections")
+
+# Set any libraries you would need to link against (.a libs, gcc, c, m, nosys as examples)
+# NOT TO BE CONFUSED WITH LINKER FLAGS. FLAGS BELONG IN the flags.cmake file
+set(LINKER_STATIC_LIBRARIES
+)
+
+# Set your desired fuse values for writing
+set(LOW_FUSE_VAL 0xc2)
+set(HIGH_FUSE_VAL 0xd9)
+set(EXTENDED_FUSE_VAL 0xcb)
+
+# Create a list of our APP source
+set(APP_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c
+)
+
+# Set all of our application and SDK include paths
+set(INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/
+)
+
+# Add any subdirectories with CMake projects that should be added
+set(CMAKE_SUBDIRS
+    # ${CMAKE_CURRENT_SOURCE_DIR}/vendor/glasslabs/DAC757x
+)
+
+# If you are going to compile Vendor source directly into yoru application
+# add it here.
+# Create a list of our APP source
+set(VENDOR_SRC
+    # ${CMAKE_CURRENT_SOURCE_DIR}/vendor/example/ex.c
+)
+
+#####################################################################################
+# End of project and CPU specific items - DO NOT EDIT ANYTING BELOW THIS POINT
+#####################################################################################
+
+# ENABLE ASM
+ENABLE_LANGUAGE(ASM)
+
+# Set the project and executable name
+project(${PRODUCT_NAME} VERSION 1.0 LANGUAGES C)
+set(EXECUTABLE_NAME ${PRODUCT_NAME})
+# Set output directories
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output/)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output/)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
+set(CMAKE_EXE_LINKER_FLAGS ${LINKER_FLAGS})
+
+# Include the directories into CMake
+include_directories(${INCLUDES})
+
+# Create our executable
+add_executable(${PRODUCT_NAME} ${APP_SRC} ${VENDOR_SRC}
+)
+
+# Include all of the vendor CMake subdirs
+foreach(subdir ${CMAKE_SUBDIRS})
+    add_subdirectory(${subdir})
+endforeach()
+
+# Rename the output to .elf as we will create multiple files
+set_target_properties(${PRODUCT_NAME} PROPERTIES OUTPUT_NAME ${PRODUCT_NAME}.elf)
+# Strip binary for upload
+add_custom_target(strip ALL avr-strip ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}.elf DEPENDS ${PRODUCT_NAME})
+# Transform binary into hex file
+add_custom_target(hex ALL avr-objcopy -j .text -j .data -O ihex ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}.elf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}.hex DEPENDS strip)
+# Print out the binary size
+add_custom_target(size ALL avr-size -C --mcu=${MCU} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}.elf DEPENDS hex)
+
+# Upload the firmware with avrdude
+add_custom_target(flash avrdude -c ${PROG_TYPE} -p ${MCU} -U flash:w:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}.hex:i -D DEPENDS size)
+# Erase the chip
+add_custom_target(erase avrdude -p ${MCU} -c ${PROG_TYPE} -e)
+
+# Write AVR Fuses
+add_custom_target(write_fuses avrdude -p ${MCU} -c ${PROG_TYPE} -U lfuse:w:${LOW_FUSE_VAL}:m -U hfuse:w:${HIGH_FUSE_VAL}:m -U efuse:w:${EXTENDED_FUSE_VAL}:m)
+# Read AVR Fuses
+add_custom_target(read_fuses avrdude -p ${MCU} -c ${PROG_TYPE} -U lfuse:r:${CMAKE_SOURCE_DIR}/lfuse.txt:h -U hfuse:r:${CMAKE_SOURCE_DIR}/hfuse.txt:h -U efuse:r:${CMAKE_SOURCE_DIR}/efuse.txt:h)
+
+# Execute our ceedling tests
+add_custom_target(test cd ../ && ceedling gcov:all utils:gcov)
