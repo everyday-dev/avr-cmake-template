@@ -4,7 +4,7 @@
 Template project for building AVR based firmware using VScode, CMake and the AVR toolchain. This project assumes you have a couple different tools installed.
 
 ## Tools Setup
-At a minium you will need the avr-gcc toolchain, Make and CMake to compile the source and generate executable artifacts.
+You will need the avr-gcc toolchain, Make and CMake to compile the source and generate executable artifacts.
 -   [avrdude](https://github.com/avrdudes/avrdude)
 -   gcc-avr / avr 8-bit toolchain
     - Windows can install via the download from [Microchip](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio/gcc-compilers)
@@ -27,14 +27,14 @@ To write and execute unit tests on the firmware source, you will need to install
 -   [gcovr](https://gcovr.com/en/stable/)
     - ```python -m pip install gcovr```
 
-## Adding new source files 📁
+## Adding new source files
 To add a new source file to the ```src/``` folder: From the root directory, use the Ceedling command below to create a new source ```.c``` and ```.h``` file. This will also create a unit test file in the ```test/``` folder for you.
 ```c
 // Don't include a .c or .h in the filename
 $ ceedling module:create[FILENAME]
 ```
 
-### Compiling, Flashing & Testing ✨
+### Compiling, Flashing & Testing
 After a fresh clone, the ```setup``` scripts can be used to initialize the project.
 #### Windows
 ```bash
@@ -84,5 +84,6 @@ make read_fuses
 ```
 
 To execute unit tests:
-```console
+```bash
 make test
+```
