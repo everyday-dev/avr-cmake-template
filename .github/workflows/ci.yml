@@ -1,10 +1,8 @@
 name: CI - AVR-GCC Build
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [ develop ]
 
 jobs:
   build:
@@ -15,13 +13,17 @@ jobs:
     - uses: actions/checkout@v3
     - name: Check out submodules
       run: git submodule update --init --recursive
-    - name: Retrieve AVR-GCC Tools
-      run: sudo apt-get install gcc-avr avr-libc
-    - name: Install CMake
-      run: sudo apt-get install cmake
+
+    - name: Install build tools
+      run: |
+        sudo apt-get install gcc-avr avr-libc ruby cmake
+        sudo gem install ceedling
+        sudo python -m pip install gcovr
+
     - name: Compile
       run: |
         ./setup.sh
-        cd build
-        cmake ..
-        make -j32
+        cd build && make -j32
+
+    - name: Run Unit tests
+      run: cd build && make test

@@ -14,7 +14,7 @@ set(MCU atmega32u4)
 set(PROG_TYPE atmelice_isp)
 
 # Add our MCU compiler options
-add_compile_options(
+set(COMPILE_OPTIONS
     -mmcu=${MCU} # MCU
     -std=gnu99 # C99 standard
     -Os # optimize
@@ -91,6 +91,11 @@ set(CMAKE_EXE_LINKER_FLAGS ${LINKER_FLAGS})
 # Include the directories into CMake
 include_directories(${INCLUDES})
 
+# Link against our static libraries
+link_libraries(${LINKER_STATIC_LIBRARIES})
+
+add_compile_options(${COMPILE_OPTIONS})
+
 # Create our executable
 add_executable(${PRODUCT_NAME} ${APP_SRC} ${VENDOR_SRC}
 )
@@ -100,17 +105,31 @@ foreach(subdir ${CMAKE_SUBDIRS})
     add_subdirectory(${subdir})
 endforeach()
 
+# Extract the current firmware version
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/src/version.h ver)
+# Major
+string(REGEX MATCH "VERSION_MAJOR([ \t]+[0-9]*)" _ ${ver})
+string(REPLACE " " "" ver_major ${CMAKE_MATCH_1})
+# Minor
+string(REGEX MATCH "VERSION_MINOR([ \t]+[0-9]*)" _ ${ver})
+string(REPLACE " " "" ver_minor ${CMAKE_MATCH_1})
+# Patch
+string(REGEX MATCH "VERSION_PATCH([ \t]+[0-9]*)" _ ${ver})
+string(REPLACE " " "" ver_patch ${CMAKE_MATCH_1})
+# Set the final firmware version string
+set(firmware_version "v${ver_major}_${ver_minor}_${ver_patch}")
+
 # Rename the output to .elf as we will create multiple files
 set_target_properties(${PRODUCT_NAME} PROPERTIES OUTPUT_NAME ${PRODUCT_NAME}.elf)
 # Strip binary for upload
 add_custom_target(strip ALL avr-strip ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}.elf DEPENDS ${PRODUCT_NAME})
 # Transform binary into hex file
-add_custom_target(hex ALL avr-objcopy -j .text -j .data -O ihex ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}.elf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}.hex DEPENDS strip)
+add_custom_target(hex ALL avr-objcopy -j .text -j .data -O ihex ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}.elf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}-${firmware_version}.hex DEPENDS strip)
 # Print out the binary size
 add_custom_target(size ALL avr-size -C --mcu=${MCU} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}.elf DEPENDS hex)
 
 # Upload the firmware with avrdude
-add_custom_target(flash avrdude -c ${PROG_TYPE} -p ${MCU} -U flash:w:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}.hex:i -D DEPENDS size)
+add_custom_target(flash avrdude -c ${PROG_TYPE} -p ${MCU} -U flash:w:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}-${firmware_version}.hex:i -D DEPENDS size)
 # Erase the chip
 add_custom_target(erase avrdude -p ${MCU} -c ${PROG_TYPE} -e)
 
