@@ -48,7 +48,7 @@ set(LINKER_STATIC_LIBRARIES
 )
 
 # Set your desired fuse values for writing
-set(LOW_FUSE_VAL 0xc2)
+set(LOW_FUSE_VAL 0xDE)
 set(HIGH_FUSE_VAL 0x99)
 set(EXTENDED_FUSE_VAL 0xc3)
 
@@ -128,14 +128,18 @@ add_custom_target(hex ALL avr-objcopy -j .text -j .data -O ihex ${CMAKE_RUNTIME_
 # Print out the binary size
 add_custom_target(size ALL avr-size -C --mcu=${MCU} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}.elf DEPENDS hex)
 
+# Upload via dfu-programmer
+add_custom_target(dfu_flash dfu-programmer ${MCU} erase --force && ${MCU} flash ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}-${firmware_version}.hex DEPENDS size)
+# Erase via dfu-programmer
+add_custom_target(dfu_erase dfu-programmer ${MCU} erase --force)
+
 # Upload the firmware with avrdude
 add_custom_target(flash avrdude -c ${PROG_TYPE} -p ${MCU} -U flash:w:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}-${firmware_version}.hex:i -D DEPENDS size)
-# Erase the chip
+# Erase the chip via avrdude
 add_custom_target(erase avrdude -p ${MCU} -c ${PROG_TYPE} -e)
-
-# Write AVR Fuses
+# Write AVR Fuses via avrdude
 add_custom_target(write_fuses avrdude -p ${MCU} -c ${PROG_TYPE} -U lfuse:w:${LOW_FUSE_VAL}:m -U hfuse:w:${HIGH_FUSE_VAL}:m -U efuse:w:${EXTENDED_FUSE_VAL}:m)
-# Read AVR Fuses
+# Read AVR Fuses via avrdude
 add_custom_target(read_fuses avrdude -p ${MCU} -c ${PROG_TYPE} -U lfuse:r:${CMAKE_SOURCE_DIR}/lfuse.txt:h -U hfuse:r:${CMAKE_SOURCE_DIR}/hfuse.txt:h -U efuse:r:${CMAKE_SOURCE_DIR}/efuse.txt:h)
 
 # Execute our ceedling tests
