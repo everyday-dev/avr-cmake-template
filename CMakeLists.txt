@@ -48,9 +48,9 @@ set(LINKER_STATIC_LIBRARIES
 )
 
 # Set your desired fuse values for writing
-set(LOW_FUSE_VAL 0xDE)
+set(LOW_FUSE_VAL 0xCE)
 set(HIGH_FUSE_VAL 0x99)
-set(EXTENDED_FUSE_VAL 0xc3)
+set(EXTENDED_FUSE_VAL 0xC3)
 
 # Create a list of our APP source
 set(APP_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c
@@ -128,13 +128,13 @@ add_custom_target(hex ALL avr-objcopy -j .text -j .data -O ihex ${CMAKE_RUNTIME_
 # Print out the binary size
 add_custom_target(size ALL avr-size -C --mcu=${MCU} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}.elf DEPENDS hex)
 
-# Upload via dfu-programmer
-add_custom_target(dfu_flash dfu-programmer ${MCU} erase --force && ${MCU} flash ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}-${firmware_version}.hex DEPENDS size)
 # Erase via dfu-programmer
 add_custom_target(dfu_erase dfu-programmer ${MCU} erase --force)
+# Upload via dfu-programmer
+add_custom_target(dfu_flash dfu-programmer ${MCU} erase --force && dfu-programmer ${MCU} flash ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}-${firmware_version}.hex && dfu-programmer ${MCU} launch DEPENDS size)
 
 # Upload the firmware with avrdude
-add_custom_target(flash avrdude -c ${PROG_TYPE} -p ${MCU} -U flash:w:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}-${firmware_version}.hex:i -D DEPENDS size)
+add_custom_target(flash avrdude -c ${PROG_TYPE} -p ${MCU} -D -U flash:w:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}-${firmware_version}.hex:i DEPENDS size)
 # Erase the chip via avrdude
 add_custom_target(erase avrdude -p ${MCU} -c ${PROG_TYPE} -e)
 # Write AVR Fuses via avrdude
