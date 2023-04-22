@@ -35,7 +35,7 @@ set(COMPILE_OPTIONS
     -fdata-sections
     -fno-split-wide-types
     -fno-tree-scev-cprop
-    -DF_CPU=1000000UL
+    -DF_CPU=16000000UL
     -DF_USB=8000000UL
 )
 
@@ -131,7 +131,7 @@ add_custom_target(size ALL avr-size -C --mcu=${MCU} ${CMAKE_RUNTIME_OUTPUT_DIREC
 # Erase via dfu-programmer
 add_custom_target(dfu_erase dfu-programmer ${MCU} erase --force)
 # Upload via dfu-programmer
-add_custom_target(dfu_flash dfu-programmer ${MCU} erase --force && dfu-programmer ${MCU} flash ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}-${firmware_version}.hex && dfu-programmer ${MCU} launch DEPENDS size)
+add_custom_target(dfu_flash dfu-programmer ${MCU} erase --force && dfu-programmer ${MCU} flash ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}-${firmware_version}.hex DEPENDS size)
 
 # Upload the firmware with avrdude
 add_custom_target(flash avrdude -c ${PROG_TYPE} -p ${MCU} -D -U flash:w:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_NAME}-${firmware_version}.hex:i DEPENDS size)
